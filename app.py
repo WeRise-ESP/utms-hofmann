@@ -27,6 +27,30 @@ st.markdown("""
 <small>Generador online multiusuario — el histórico se guarda en Google Sheets</small></div>
 """, unsafe_allow_html=True)
 
+# ---------- protección con contraseña ----------
+def verificar_password() -> bool:
+    """Pide contraseña si está configurada en st.secrets[auth][password]."""
+    pwd_correcta = st.secrets.get("auth", {}).get("password", "")
+    if not pwd_correcta:                      # sin contraseña configurada
+        return True
+    if st.session_state.get("autenticado"):
+        return True
+    st.markdown("#### 🔒 Acceso restringido")
+    with st.form("login"):
+        pwd = st.text_input("Contraseña", type="password")
+        entrar = st.form_submit_button("Entrar", type="primary")
+    if entrar:
+        if pwd == pwd_correcta:
+            st.session_state["autenticado"] = True
+            st.rerun()
+        else:
+            st.error("Contraseña incorrecta")
+    return False
+
+
+if not verificar_password():
+    st.stop()
+
 # ---------- conexión a Google Sheets ----------
 conn = st.connection("gsheets", type=GSheetsConnection)
 
