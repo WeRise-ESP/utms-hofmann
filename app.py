@@ -86,8 +86,9 @@ medios = leer_lista("medios", "medio", MEDIOS_DEF)
 historial = leer_hoja("historial", COLS_HIST)
 
 # ---------- pestañas ----------
-tab_gen, tab_fuente, tab_informe, tab_config = st.tabs(
-    ["🔗 Generador", "📋 Tablas por fuente", "📊 Informe", "⚙️ Fuentes y Medios"])
+tab_gen, tab_fuente, tab_informe, tab_catalogo, tab_config = st.tabs(
+    ["🔗 Generador", "📋 Tablas por fuente", "📊 Informe",
+     "🗂 Catálogo", "⚙️ Fuentes y Medios"])
 
 # =============================================================
 #  GENERADOR
@@ -239,6 +240,44 @@ with tab_informe:
                            datos.to_csv(index=False).encode("utf-8-sig"),
                            file_name=f"informe_utms_hofmann_{date.today()}.csv",
                            mime="text/csv")
+
+# =============================================================
+#  CATÁLOGO DE FUENTES Y MEDIOS
+# =============================================================
+with tab_catalogo:
+    st.subheader("Catálogo: todas las fuentes y medios del sistema")
+    st.caption("Listado completo de valores disponibles, con cuántas UTMs "
+               "se han creado con cada uno.")
+
+    uso_f = historial["utm_source"].value_counts() if not historial.empty else {}
+    uso_m = historial["utm_medium"].value_counts() if not historial.empty else {}
+
+    df_cat_f = pd.DataFrame({
+        "fuente (utm_source)": fuentes,
+        "utms creadas": [int(uso_f.get(f, 0)) for f in fuentes],
+    })
+    df_cat_m = pd.DataFrame({
+        "medio (utm_medium)": medios,
+        "utms creadas": [int(uso_m.get(m, 0)) for m in medios],
+    })
+
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown(f"**Fuentes ({len(fuentes)})**")
+        st.dataframe(df_cat_f, use_container_width=True, hide_index=True)
+    with c2:
+        st.markdown(f"**Medios ({len(medios)})**")
+        st.dataframe(df_cat_m, use_container_width=True, hide_index=True)
+
+    st.download_button(
+        "⬇ Exportar catálogo (CSV)",
+        pd.concat([df_cat_f.rename(columns={"fuente (utm_source)": "valor"})
+                     .assign(tipo="fuente"),
+                   df_cat_m.rename(columns={"medio (utm_medium)": "valor"})
+                     .assign(tipo="medio")])[["tipo", "valor", "utms creadas"]]
+          .to_csv(index=False).encode("utf-8-sig"),
+        file_name=f"catalogo_fuentes_medios_{date.today()}.csv",
+        mime="text/csv")
 
 # =============================================================
 #  CONFIGURACIÓN
