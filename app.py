@@ -269,6 +269,24 @@ with tab_catalogo:
         st.markdown(f"**Medios ({len(medios)})**")
         st.dataframe(df_cat_m, use_container_width=True, hide_index=True)
 
+    st.divider()
+    st.markdown("**Asociaciones fuente + medio de las UTMs creadas**")
+    if historial.empty:
+        st.info("Aún no hay UTMs guardadas, por lo que no hay asociaciones.")
+    else:
+        df_asoc = (historial.groupby(["utm_source", "utm_medium"])
+                   .size().reset_index(name="utms creadas")
+                   .sort_values("utms creadas", ascending=False)
+                   .rename(columns={"utm_source": "fuente (utm_source)",
+                                    "utm_medium": "medio (utm_medium)"}))
+        st.dataframe(df_asoc, use_container_width=True, hide_index=True)
+
+        with st.expander("Ver como matriz (fuentes × medios)"):
+            matriz = pd.crosstab(historial["utm_source"],
+                                 historial["utm_medium"])
+            matriz.index.name = "fuente \\ medio"
+            st.dataframe(matriz, use_container_width=True)
+
     st.download_button(
         "⬇ Exportar catálogo (CSV)",
         pd.concat([df_cat_f.rename(columns={"fuente (utm_source)": "valor"})
